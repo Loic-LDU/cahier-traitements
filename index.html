@@ -1950,6 +1950,10 @@ body.wk-lock { overflow:hidden; }
         <span class="sidebar-icon">📥</span>
         <span class="sidebar-label">Exporter</span>
       </button>
+      <button class="sidebar-action" onclick="openSauvegardeComplete()" title="Sauvegarde complète du domaine">
+        <span class="sidebar-icon">🗄️</span>
+        <span class="sidebar-label">Sauvegarde</span>
+      </button>
       <button class="sidebar-action" onclick="toggleTheme()" id="theme-toggle-btn" title="Mode sombre">
         <span class="sidebar-icon" id="theme-toggle-icon">🌙</span>
         <span class="sidebar-label" id="theme-toggle-label">Mode sombre</span>
@@ -3117,6 +3121,24 @@ body.wk-lock { overflow:hidden; }
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-membre-nom')">Annuler</button>
       <button class="btn btn-primary" onclick="saveMembreNom()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SAUVEGARDE COMPLÈTE -->
+<div class="modal-overlay" id="modal-sauvegarde">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header"><h2>🗄️ Sauvegarde du domaine</h2><button class="modal-close" onclick="closeModal('modal-sauvegarde')">×</button></div>
+    <div class="modal-body">
+      <p style="margin-top:0; color:var(--muted); font-size:14px; line-height:1.5;">Téléchargez une copie complète des données de votre domaine, à conserver en lieu sûr (ordinateur, clé USB, cloud personnel).</p>
+      <div class="form-row" style="margin-bottom:16px;">
+        <button class="btn btn-primary" style="width:100%;" onclick="exporterSauvegardeJSON()">📄 Fichier de restauration (JSON)</button>
+        <small style="display:block; margin-top:6px; color:var(--muted);">Copie fidèle et complète. C'est votre vraie sauvegarde de secours, réimportable plus tard.</small>
+      </div>
+      <div class="form-row">
+        <button class="btn btn-secondary" style="width:100%;" onclick="exporterSauvegardeExcel()">📊 Tableur de consultation (Excel)</button>
+        <small style="display:block; margin-top:6px; color:var(--muted);">Lisible feuille par feuille, pour relire vos données. Pratique à consulter, mais non réimportable.</small>
+      </div>
     </div>
   </div>
 </div>
@@ -4465,6 +4487,7 @@ function appliquerDroitsUI() {
   
   // Bouton export
   toggleElementByPerm('button[onclick*="exportData"]', 'export_registre');
+  toggleElementByPerm('button[onclick*="openSauvegardeComplete"]', 'export_registre');
 
   // "+ Nouvelle tâche"
   toggleElementByPerm('button[onclick*="openTacheModal()"]:not([onclick*="\'"])', 'taches_creer');
@@ -8729,6 +8752,195 @@ function exportData() {
   const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
   const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
   const a = document.createElement('a'); a.href=url; a.download=`cahier-traitements-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+}
+
+// ============== SAUVEGARDE COMPLÈTE DU DOMAINE ==============
+// Export de 100% des données du domaine : JSON (fidèle, réimportable) + Excel (lisible).
+
+function openSauvegardeComplete() {
+  if (!peut('export_registre')) { alert('Vous n\'avez pas le droit d\'exporter les données.'); return; }
+  document.getElementById('modal-sauvegarde').classList.add('active');
+}
+
+function _slugDomaine() {
+  return ((currentDomaine && currentDomaine.nom) ? currentDomaine.nom : 'domaine')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'domaine';
+}
+
+function _telechargerBlob(blob, nom) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nom; a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+}
+
+// Construit l'objet sauvegarde complet à partir du cache en mémoire
+function _construireSauvegarde() {
+  return {
+    _meta: {
+      format: 'cahier-traitements-sauvegarde',
+      version: 1,
+      exporte_le: new Date().toISOString(),
+      domaine_nom: currentDomaine.nom,
+      domaine_id: currentDomaine.id,
+      exporte_par: (currentUser && currentUser.email) ? currentUser.email : ''
+    },
+    domaine: {
+      id: currentDomaine.id,
+      nom: currentDomaine.nom,
+      volume_bouillie_ha_defaut: currentDomaine.volume_bouillie_ha_defaut,
+      capacite_atomiseur: currentDomaine.capacite_atomiseur
+    },
+    donnees: {
+      parcelles: cache.parcelles,
+      produits: cache.produits,
+      traitements: cache.traitements,
+      traitement_produits: cache.traitement_produits,
+      traitement_parcelles: cache.traitement_parcelles,
+      preparations: cache.preparations,
+      preparation_produits: cache.preparation_produits,
+      preparation_parcelles: cache.preparation_parcelles,
+      parcelle_notes: cache.parcelle_notes,
+      fiches_epi: cache.fiches_epi,
+      rappels: cache.rappels,
+      parcours: cache.parcours,
+      taches: cache.taches,
+      tache_parcelles: cache.tache_parcelles,
+      tache_assignations: cache.tache_assignations,
+      membres: cache.membres,
+      invitations: cache.invitations
+    }
+  };
+}
+
+// Export JSON — sauvegarde fidèle et réimportable
+function exporterSauvegardeJSON() {
+  if (!peut('export_registre')) { alert('Vous n\'avez pas le droit d\'exporter les données.'); return; }
+  try {
+    const data = _construireSauvegarde();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    _telechargerBlob(blob, 'sauvegarde-' + _slugDomaine() + '-' + new Date().toISOString().slice(0, 10) + '.json');
+    toast('✓ Sauvegarde JSON téléchargée');
+  } catch (e) {
+    console.error('Erreur export JSON:', e);
+    alert('Erreur lors de la création de la sauvegarde : ' + (e && e.message ? e.message : e));
+  }
+}
+
+// Chargement paresseux de la librairie Excel (SheetJS) — seulement au premier usage
+let _xlsxPromise = null;
+function _chargerXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  if (_xlsxPromise) return _xlsxPromise;
+  _xlsxPromise = new Promise(function (resolve, reject) {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = function () { resolve(); };
+    s.onerror = function () { _xlsxPromise = null; reject(new Error('Librairie Excel non chargée')); };
+    document.head.appendChild(s);
+  });
+  return _xlsxPromise;
+}
+
+// Rend une liste de lignes lisible : noms en clair, objets/tableaux en texte
+function _lignesLisibles(rows) {
+  return (rows || []).map(function (r) {
+    const o = {};
+    Object.keys(r).forEach(function (k) {
+      const v = r[k];
+      if (k === 'parcelle_id') { const p = getParcelle(v); o['parcelle'] = p ? p.nom : v; }
+      else if (k === 'produit_id') { const p = getProduit(v); o['produit'] = p ? p.nom : v; }
+      else if (v && typeof v === 'object') { o[k] = JSON.stringify(v); }
+      else { o[k] = v; }
+    });
+    return o;
+  });
+}
+
+// Feuille Traitements dénormalisée et lisible (mêmes infos que l'export CSV)
+function _feuilleTraitements() {
+  return [].concat(cache.traitements).sort(function (a, b) {
+    const da = a.date || '', db = b.date || '';
+    if (da !== db) return da.localeCompare(db);
+    return (a.heure || '').localeCompare(b.heure || '');
+  }).map(function (t) {
+    const tps = getTraitementProduits(t.id);
+    const tparcs = getTraitementParcelles(t.id);
+    const produitsTxt = tps.length > 0
+      ? tps.map(function (tp) { const p = getProduit(tp.produit_id); return (p ? p.nom : '?') + ' ' + tp.dose + ' ' + tp.unite; }).join(' + ')
+      : (((getProduit(t.produit_id) ? getProduit(t.produit_id).nom : '') || '') + ' ' + (t.dose || ''));
+    const ciblesTxt = (t.cibles || []).join(', ') || t.cible || '';
+    const parcellesTxt = tparcs.length > 0
+      ? tparcs.map(function (tp) { const p = getParcelle(tp.parcelle_id); return (tp.zone_precise ? tp.zone_precise + ' ' : '') + (p ? p.nom : '?') + (tp.surface_traitee ? ' (' + tp.surface_traitee + 'm²)' : ''); }).join(' / ')
+      : (t.parcelles || []).map(function (pid) { const p = getParcelle(pid); return p ? p.nom : ''; }).filter(Boolean).join(' / ');
+    const surfaceTotale = tparcs.length > 0
+      ? tparcs.reduce(function (s, tp) { return s + (parseFloat(tp.surface_traitee) || 0); }, 0)
+      : (t.parcelles || []).reduce(function (s, pid) { const p = getParcelle(pid); return s + ((parseFloat(p ? p.surface : 0) || 0) * 10000); }, 0);
+    const dreMax = Math.max.apply(null, [0].concat(tps.map(function (tp) { const p = getProduit(tp.produit_id); return (p && p.dre) ? p.dre : 0; })));
+    return {
+      'N° traitement': t.numero_traitement || '',
+      'Date': t.date || '',
+      'Heure': t.heure || '',
+      'N° passe': t.numero_passe || '',
+      'Matériel': t.materiel || '',
+      'Produits + doses': produitsTxt,
+      'Cibles': ciblesTxt,
+      'Volume eau (L)': (t.volume_eau == null ? '' : t.volume_eau),
+      'Reste bouillie (L)': (t.reste_bouillie == null ? '' : t.reste_bouillie),
+      'Parcelles': parcellesTxt,
+      'Surface traitée (m²)': surfaceTotale.toFixed(0),
+      'DRE max (h)': dreMax || '',
+      'Applicateur': t.applicateur || '',
+      'Météo': t.meteo || '',
+      'Vent (km/h)': (t.vitesse_vent_kmh == null ? '' : t.vitesse_vent_kmh),
+      'Température (°C)': (t.temperature_c == null ? '' : t.temperature_c),
+      'Humidité (%)': (t.humidite_pct == null ? '' : t.humidite_pct),
+      'Notes techniques': (t.notes_techniques || t.notes || '').replace(/[\r\n]/g, ' ')
+    };
+  });
+}
+
+// Export Excel — une feuille lisible par catégorie
+function exporterSauvegardeExcel() {
+  if (!peut('export_registre')) { alert('Vous n\'avez pas le droit d\'exporter les données.'); return; }
+  toast('⏳ Préparation du tableur…');
+  _chargerXLSX().then(function () {
+    const wb = XLSX.utils.book_new();
+
+    function ajouterFeuille(nom, rows) {
+      const data = _lignesLisibles(rows);
+      if (!data.length) return;
+      const ws = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, nom.slice(0, 31));
+    }
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{
+      'Domaine': currentDomaine.nom,
+      'Volume bouillie /ha (L)': currentDomaine.volume_bouillie_ha_defaut,
+      'Capacité atomiseur (L)': currentDomaine.capacite_atomiseur,
+      'Exporté le': new Date().toLocaleString('fr-FR')
+    }]), 'Domaine');
+
+    const traits = _feuilleTraitements();
+    if (traits.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(traits), 'Traitements');
+
+    ajouterFeuille('Parcelles', cache.parcelles);
+    ajouterFeuille('Produits', cache.produits);
+    ajouterFeuille('Préparations', cache.preparations);
+    ajouterFeuille('Carnet', cache.parcelle_notes);
+    ajouterFeuille('Fiches EPI', cache.fiches_epi);
+    ajouterFeuille('Rappels', cache.rappels);
+    ajouterFeuille('Parcours', cache.parcours);
+    ajouterFeuille('Tâches', cache.taches);
+    ajouterFeuille('Membres', cache.membres);
+
+    XLSX.writeFile(wb, 'sauvegarde-' + _slugDomaine() + '-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    toast('✓ Tableur Excel téléchargé');
+  }).catch(function (e) {
+    console.error('Erreur export Excel:', e);
+    alert('Impossible de générer le tableur Excel. Vérifiez votre connexion internet, puis réessayez.');
+  });
 }
 
 // ============== MODALES ==============
