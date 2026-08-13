@@ -81,10 +81,7 @@
 :root[data-theme="dark"] .tache-type { color: var(--accent); }
 :root[data-theme="dark"] .tache-type { background: rgba(217,138,160,0.14); }
 :root[data-theme="dark"] .rappels-section { background: var(--surface-2); }
-/* Post-its : on garde leurs pastels et leur texte noir, même en sombre */
-:root[data-theme="dark"] .post-it.fait .post-it-texte { color: #6b6258; }
-:root[data-theme="dark"] .post-it-add { color: var(--muted); border-color: var(--border); }
-:root[data-theme="dark"] .post-it-add:hover { color: var(--accent); border-color: var(--accent); }
+/* Cartes de rappel : elles utilisent les variables de thème, aucune surcharge nécessaire */
 :root[data-theme="dark"] .tache-statut-badge.s-a_faire,
 :root[data-theme="dark"] .tache-statut-badge.s-en_cours { background: rgba(212,146,74,0.18); }
 :root[data-theme="dark"] .tache-statut-badge.s-fait { background: rgba(111,174,132,0.18); }
@@ -147,12 +144,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sa
   text-align: center; 
   margin-bottom: 28px; 
 }
-.auth-logo img {
-  width: 88px;
+.auth-logo .auth-grappe {
+  width: 76px;
   height: 88px;
-  border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-  margin-bottom: 16px;
 }
 .auth-logo h1 { 
   font-family: 'Cormorant Garamond', Georgia, serif;
@@ -430,7 +424,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sa
     padding: 28px 22px 20px;
     max-width: 100%;
   }
-  .auth-logo img { width: 72px; height: 72px; }
+  .auth-logo .auth-grappe { width: 62px; height: 72px; }
   .auth-logo h1 { font-size: 26px; }
 }
 
@@ -455,13 +449,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sa
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 1100; /* au-dessus des couches Leaflet (qui montent à 1000) */
+  /* Réserve la zone de la barre d'état iOS quand l'app est en plein écran sur iPad avec souris/clavier.
+     Sur navigateur classique env() vaut 0 : aucun effet. En tactile, c'est la règle mobile qui prend le relais. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 /* Rétractée par défaut sur desktop */
 #sidebar.sidebar-collapsed { 
   width: 60px;
 }
-/* Déploiement automatique au survol sur desktop (uniquement si rétractée) */
-@media (min-width: 901px) {
+/* Déploiement automatique au survol sur desktop — souris uniquement (pas sur tablette tactile) */
+@media (min-width: 901px) and (hover: hover) {
   #sidebar.sidebar-collapsed:hover {
     width: 240px;
     position: fixed;
@@ -613,7 +610,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sa
   flex-shrink: 0;
   width: 22px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
 }
+.sidebar-link.active .sidebar-icon,
+.sidebar-link:hover .sidebar-icon { opacity: 1; }
+.sidebar-icon svg { display: block; }
+/* Grappe (logo) — hérite la couleur du contexte */
+.sidebar-domaine-icon { color: var(--on-brand); display: inline-flex; align-items: center; }
+.sidebar-domaine-icon svg { display: block; }
+.auth-grappe { color: var(--bordeaux); display: block; margin: 0 auto 14px; }
 .sidebar-label { 
   white-space: nowrap; 
   overflow: hidden;
@@ -747,7 +755,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sa
 /* MAIN CONTENT */
 #main-content {
   flex: 1;
-  padding: 24px 32px;
+  /* +env() réserve la barre d'état iOS en plein écran sur iPad avec souris/clavier (0 sur navigateur classique) */
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 32px 24px;
   min-width: 0;
   width: 100%;
   /* Pas de max-width pour profiter de toute la largeur de l'écran */
@@ -757,8 +766,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sa
 /* Pour les vues lecture (formulaires longs), limiter la largeur pour la lisibilité */
 .view-readable { max-width: 1400px; }
 
-/* RESPONSIVE MOBILE */
-@media (max-width: 900px) {
+/* RESPONSIVE MOBILE — s'applique aussi à tout appareil tactile (iPad) quelle que soit la largeur,
+   pour que le menu coulissant et la gestion de la barre d'état iOS marchent aussi en paysage. */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
   #sidebar-toggle-mobile { display: block; }
   #sidebar {
     position: fixed;
@@ -828,30 +838,49 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sa
   }
 }
 
+/* ===== BARRE DE TITRE DE VUE ===== */
+.page-head { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.page-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 30px; font-weight: 600; color: var(--bordeaux); line-height: 1.1; letter-spacing: .2px; }
+:root[data-theme="dark"] .page-title { color: var(--accent); }
+.page-date { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+@media (max-width: 640px) {
+  .page-head { margin-bottom: 14px; padding-bottom: 10px; }
+  .page-title { font-size: 24px; }
+}
+
 /* ===== STATS ===== */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
-.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
-.stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.stat .value { font-size: 24px; font-weight: 600; color: var(--bordeaux); margin-top: 4px; }
-.stat .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px 17px; box-shadow: 0 1px 2px var(--shadow); transition: box-shadow .15s, transform .15s; }
+.stat:hover { box-shadow: 0 4px 14px var(--shadow); transform: translateY(-1px); }
+.stat-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.stat-ico { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--sand); color: var(--bordeaux); flex-shrink: 0; }
+.stat-ico.gold { color: var(--warn); }
+.stat-ico.vine { color: var(--ok); }
+:root[data-theme="dark"] .stat-ico { background: var(--surface-2); color: var(--accent); }
+.stat-link { display: inline-block; margin-top: 9px; font-size: 12px; font-weight: 600; color: var(--bordeaux); background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; }
+.stat-link:hover { text-decoration: underline; }
+:root[data-theme="dark"] .stat-link { color: var(--accent); }
+.stat .label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.stat .value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 38px; line-height: 1.05; font-weight: 600; color: var(--bordeaux); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.stat .sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 .stat.alert .value { color: var(--warn); }
-.section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 20px 0 10px; font-weight: 600; }
+.section-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 21px; text-transform: none; letter-spacing: .2px; color: var(--bordeaux); margin: 22px 0 10px; font-weight: 600; }
 .alert-banner { background: #fdf3e3; border-left: 4px solid var(--warn); padding: 12px 14px; border-radius: 4px; margin-bottom: 10px; font-size: 14px; }
 .alert-banner.danger { background: #fbe9e8; border-left-color: var(--danger); }
 .alert-banner strong { display: block; margin-bottom: 2px; }
 
 /* ===== TABLES ===== */
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px var(--shadow); }
 .toolbar { padding: 12px 14px; background: var(--sand); border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.toolbar input[type="text"], .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 14px; font-family: inherit; background: var(--surface); }
+.toolbar input[type="text"], .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 14px; font-family: inherit; background: var(--surface); }
 .toolbar input[type="text"] { flex: 1; min-width: 140px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th { text-align: left; padding: 10px 12px; background: var(--sand); border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
-td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { text-align: left; padding: 11px 14px; background: var(--sand); border-bottom: 1px solid var(--border); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted); font-weight: 600; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 tr.row-clickable { cursor: pointer; }
-tr.row-clickable:hover { background: #fdfbf6; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+tr.row-clickable:hover { background: var(--surface-2); }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
 .badge.ok { background: #e3f0e6; color: var(--ok); }
 .badge.warn { background: #fbeed6; color: var(--warn); }
 .badge.danger { background: #f9e0df; color: var(--danger); }
@@ -860,8 +889,10 @@ tr.row-clickable:hover { background: #fdfbf6; }
 .empty .ico { font-size: 36px; margin-bottom: 8px; opacity: 0.4; }
 
 /* ===== BOUTONS ===== */
-.btn { padding: 9px 14px; border: none; border-radius: 5px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
-.btn-primary { background: var(--bordeaux); color: white; }
+.btn { padding: 9px 15px; border: none; border-radius: 7px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.btn:focus-visible { outline: 2px solid var(--bordeaux); outline-offset: 2px; }
+:root[data-theme="dark"] .btn:focus-visible { outline-color: var(--accent); }
+.btn-primary { background: var(--bordeaux); color: white; box-shadow: 0 1px 2px var(--shadow); }
 .btn-primary:hover { background: var(--bordeaux-dark); }
 .btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
 .btn-secondary:hover { background: var(--sand); }
@@ -870,7 +901,7 @@ tr.row-clickable:hover { background: #fdfbf6; }
 /* ===== MODALES ===== */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
 .modal-overlay.active { display: flex; }
-.modal { background: var(--surface); border-radius: 10px; width: 100%; max-width: 540px; margin-top: 20px; overflow: hidden; }
+.modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 540px; margin-top: 20px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,0.28); }
 /* Sur écrans larges, les modales prennent plus de place pour gagner en horizontalité */
 @media (min-width: 1200px) {
   .modal { max-width: 900px; }
@@ -880,13 +911,29 @@ tr.row-clickable:hover { background: #fdfbf6; }
 @media (min-width: 900px) and (max-width: 1199px) {
   .modal { max-width: 720px; }
 }
-.modal-header { padding: 16px 20px; background: var(--bordeaux); color: white; display: flex; justify-content: space-between; align-items: center; }
-.modal-header h2 { font-size: 16px; font-weight: 600; }
-.modal-close { background: transparent; border: none; color: white; font-size: 22px; cursor: pointer; padding: 0; line-height: 1; }
+.modal-header { padding: 15px 20px; background: linear-gradient(135deg, var(--bordeaux-dark), var(--bordeaux)); color: white; display: flex; justify-content: space-between; align-items: center; }
+.modal-header h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 21px; font-weight: 600; letter-spacing: .2px; }
+.modal-close { background: rgba(255,255,255,0.12); border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; line-height: 1; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background .15s; flex-shrink: 0; }
+.modal-close:hover { background: rgba(255,255,255,0.26); }
 .modal-body { padding: 20px; }
 .form-row { margin-bottom: 14px; }
 .form-row label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
-.form-row input, .form-row select, .form-row textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 5px; font-size: 15px; font-family: inherit; background: var(--surface); }
+.form-row input, .form-row select, .form-row textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; font-size: 15px; font-family: inherit; background: var(--surface); transition: border-color .15s, box-shadow .15s; }
+/* Focus visible : indispensable en extérieur / plein soleil */
+.form-row input:focus, .form-row select:focus, .form-row textarea:focus,
+.toolbar input[type="text"]:focus, .toolbar select:focus {
+  outline: none;
+  border-color: var(--bordeaux);
+  box-shadow: 0 0 0 3px rgba(107,29,46,0.14);
+}
+:root[data-theme="dark"] .form-row input:focus,
+:root[data-theme="dark"] .form-row select:focus,
+:root[data-theme="dark"] .form-row textarea:focus,
+:root[data-theme="dark"] .toolbar input[type="text"]:focus,
+:root[data-theme="dark"] .toolbar select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(217,138,160,0.20);
+}
 .form-row textarea { resize: none; min-height: 60px; overflow: hidden; }
 /* Liste dynamique de cépages */
 .cepage-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
@@ -1037,10 +1084,10 @@ tr.drag-over-bottom td { box-shadow: inset 0 -3px 0 var(--bordeaux); }
 
 /* ===== POST-ITS (RAPPELS) ===== */
 .rappels-section {
-  background: #faf6e8;
-  border: 1px dashed #d4c69a;
-  border-radius: 12px;
-  padding: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px 20px;
   margin-bottom: 20px;
 }
 .rappels-header {
@@ -1051,8 +1098,16 @@ tr.drag-over-bottom td { box-shadow: inset 0 -3px 0 var(--bordeaux); }
   flex-wrap: wrap;
   gap: 10px;
 }
+.rappels-hint {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+}
 .rappels-title {
-  font-size: 16px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 21px;
   font-weight: 600;
   color: var(--bordeaux);
   display: flex;
@@ -1072,132 +1127,144 @@ tr.drag-over-bottom td { box-shadow: inset 0 -3px 0 var(--bordeaux); }
   font-size: 14px;
 }
 
-/* Le post-it lui-même */
-.post-it {
+/* ===== CARTES DE RAPPEL ===== */
+.rap-card {
   position: relative;
-  background: #fff9c4;
-  padding: 18px 16px 16px;
-  border-radius: 2px;
-  box-shadow: 
-    0 4px 6px rgba(0,0,0,0.1),
-    0 1px 3px rgba(0,0,0,0.08);
-  min-height: 140px;
+  background: #EFE4CF;
+  border: 1px solid rgba(180,136,74,.22);
+  border-top: 3px solid #B4884A;
+  border-radius: 10px;
+  padding: 15px 15px 12px;
+  min-height: 138px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  font-family: 'Kalam', cursive;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 1px 3px rgba(62,17,25,.10);
+  transition: box-shadow .16s ease, transform .16s ease;
 }
-.post-it:nth-child(3n+1) { transform: rotate(-1.5deg); }
-.post-it:nth-child(3n+2) { transform: rotate(1deg); }
-.post-it:nth-child(3n+3) { transform: rotate(-0.5deg); }
-.post-it:hover {
-  transform: rotate(0deg) scale(1.03);
-  box-shadow: 
-    0 8px 16px rgba(0,0,0,0.15),
-    0 4px 8px rgba(0,0,0,0.1);
-  z-index: 1;
-}
-.post-it.urgent { background: #ffb7b7; }
-.post-it.normale:nth-child(4n+1) { background: #fff9c4; }
-.post-it.normale:nth-child(4n+2) { background: #c8f0c8; }
-.post-it.normale:nth-child(4n+3) { background: #c8dcf0; }
-.post-it.normale:nth-child(4n+4) { background: #f5e0c4; }
+.rap-card:hover { box-shadow: 0 6px 18px rgba(62,17,25,.16); transform: translateY(-2px); }
 
-.post-it-texte {
+/* Niveaux d'urgence : teinte du papier + liseré haut + punaise */
+.rap-card.retard,
+.rap-card.haute   { background: #F7DEDA; border-color: rgba(178,58,58,.24); border-top-color: #B23A3A; }
+.rap-card.moyenne { background: #EFE4CF; border-top-color: #B4884A; }
+.rap-card.basse   { background: #F7F2E8; border-top-color: #4F6B44; }
+
+/* Punaise */
+.rap-pin {
+  position: absolute;
+  top: -7px; left: 16px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: #B4884A;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,.28);
+}
+.rap-card.retard .rap-pin,
+.rap-card.haute .rap-pin { background: #B23A3A; }
+.rap-card.basse .rap-pin { background: #4F6B44; }
+
+/* Texte manuscrit — le papier reste clair même en thème sombre */
+.rap-texte {
+  font-family: 'Kalam', cursive;
   font-size: 17px;
-  line-height: 1.35;
-  color: #2c2820;
-  font-weight: 400;
+  line-height: 1.3;
+  color: #2B211C;
   flex: 1;
   word-wrap: break-word;
   white-space: pre-wrap;
+  padding-right: 20px;
 }
-.post-it-footer {
-  margin-top: 12px;
+.rap-footer {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rap-parcelle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #6b5c4d;
+  min-width: 0;
+}
+.rap-parcelle svg { flex: 0 0 auto; opacity: .8; }
+.rap-echeance {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
-  color: #5d5547;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px dashed rgba(120,90,50,.35);
+  padding-top: 8px;
 }
-.post-it-parcelle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-style: italic;
+.rap-date { font-size: 11.5px; color: #6b5c4d; }
+.rap-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+  margin-left: auto;
 }
-.post-it-urgent-badge {
-  background: #c41e3a;
-  color: white;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-family: system-ui, sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.post-it-delete {
+.rap-badge.retard,
+.rap-badge.haute   { background: #B23A3A; color: #fff; }
+.rap-badge.moyenne { background: #B4884A; color: #fff; }
+.rap-badge.basse   { background: #E4EBDD; color: #4F6B44; }
+.rap-badge.ok      { background: rgba(0,0,0,.08); color: #6b5c4d; }
+/* Badge « Urgent » seul (sans échéance) : aligné à droite sous la parcelle */
+.rap-footer > .rap-badge { align-self: flex-end; }
+
+.rap-delete {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0,0,0,0.1);
+  top: 6px; right: 6px;
+  background: rgba(0,0,0,.07);
   border: none;
-  width: 24px;
-  height: 24px;
+  width: 26px; height: 26px;
   border-radius: 50%;
   cursor: pointer;
-  color: #2c2820;
+  color: #2B211C;
   opacity: 0;
-  transition: opacity 0.2s, background 0.15s;
-  font-size: 16px;
+  transition: opacity .2s, background .15s;
+  font-size: 17px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.post-it:hover .post-it-delete { opacity: 0.6; }
-.post-it-delete:hover {
-  opacity: 1 !important;
-  background: rgba(196, 30, 58, 0.2);
+.rap-card:hover .rap-delete { opacity: .6; }
+/* Écrans tactiles : pas de survol, le bouton doit rester visible */
+@media (hover: none) {
+  .rap-delete { opacity: .45; width: 30px; height: 30px; }
 }
-.post-it.fait {
-  background: #e8e8e8 !important;
-  opacity: 0.6;
-}
-.post-it.fait .post-it-texte {
-  text-decoration: line-through;
-  color: var(--muted);
-}
+.rap-delete:hover { opacity: 1 !important; background: rgba(178,58,58,.22); }
 
-.post-it-add {
+.rap-card.fait { background: #E8E4DE !important; border-top-color: #b9b0a4; opacity: .65; }
+.rap-card.fait .rap-pin { background: #b9b0a4; }
+.rap-card.fait .rap-texte { text-decoration: line-through; color: #6b6258; }
+
+.rap-add {
   background: transparent;
-  border: 2px dashed #c4b88a;
-  border-radius: 2px;
-  min-height: 140px;
+  border: 1.5px dashed #C9A46A;
+  border-radius: 10px;
+  min-height: 138px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 8px;
-  color: #8b7d52;
-  font-family: 'Kalam', cursive;
-  font-size: 16px;
-  transition: all 0.15s;
+  gap: 6px;
+  color: #9a7c46;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: all .15s;
 }
-.post-it-add:hover {
-  background: rgba(212, 198, 154, 0.2);
-  border-color: #8b7d52;
-  color: var(--bordeaux);
-}
-.post-it-add-icon {
-  font-size: 32px;
-  font-weight: 300;
-}
+.rap-add:hover { border-color: var(--bordeaux); color: var(--bordeaux); background: rgba(201,164,106,.08); }
+:root[data-theme="dark"] .rap-add { color: #C9A46A; }
+:root[data-theme="dark"] .rap-add:hover { border-color: var(--accent); color: var(--accent); background: rgba(201,164,106,.10); }
+.rap-add-icon { font-size: 26px; font-weight: 300; line-height: 1; }
 
 /* ===== CARTE ===== */
 /* Layout calculateur 2 colonnes sur grand écran */
@@ -1271,9 +1338,47 @@ tr.drag-over-bottom td { box-shadow: inset 0 -3px 0 var(--bordeaux); }
 .parcelle-list-mini .item .status-dot.unplaced { background: var(--border); }
 .parcelle-list-mini .item button { background: var(--bordeaux); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit; }
 .parcelle-list-mini .item button.placed-btn { background: var(--vine); }
-.vigne-marker { background: var(--bordeaux); border: 3px solid white; border-radius: 50%; width: 22px; height: 22px; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer; }
-.vigne-marker.dre { background: var(--warn); animation: pulse 1.6s infinite; }
-@keyframes pulse { 0%,100% { box-shadow: 0 2px 6px rgba(0,0,0,0.4),0 0 0 0 rgba(196,122,46,.6); } 50% { box-shadow: 0 2px 6px rgba(0,0,0,0.4),0 0 0 8px rgba(196,122,46,0); } }
+/* ===== CARTE MODERNISÉE (marqueur épingle SVG) ===== */
+.vigne-marker { position: relative; width: 30px; height: 38px; color: var(--bordeaux); cursor: pointer; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.35)); transition: transform .15s ease; }
+.vigne-marker:hover { transform: scale(1.1); }
+.vigne-marker svg { display: block; }
+.vigne-marker.dre { color: var(--warn); animation: pulse 1.6s infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+/* Filtre léger sur les tuiles : donne du peps à l'orthophoto IGN */
+.leaflet-tile-pane { filter: saturate(1.15) contrast(1.04); }
+:root[data-theme="dark"] .leaflet-tile-pane { filter: saturate(1.08) contrast(1.05) brightness(0.9); }
+
+/* Popups : coins arrondis + ombre douce (toutes cartes) */
+.leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 6px 18px rgba(60,40,30,0.18); border: 1px solid var(--border); }
+/* Popup parcelle (classe ov-popup) : contenu bord à bord avec en-tête bordeaux */
+.ov-popup .leaflet-popup-content { margin: 0; width: 236px !important; }
+.ov-popup .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; }
+.ov-pp-head { background: linear-gradient(135deg, var(--bordeaux-dark), var(--bordeaux)); color: #f6ecdf; padding: 11px 14px; }
+.ov-pp-name { font-size: 16px; font-weight: 700; line-height: 1.15; }
+.ov-pp-cepage { font-size: 10.5px; letter-spacing: .8px; text-transform: uppercase; color: #d9b98a; margin-top: 2px; }
+.ov-pp-body { padding: 10px 14px 12px; }
+.ov-pp-row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 3px 0; color: var(--muted); }
+.ov-pp-row b { color: var(--ink); font-weight: 600; }
+.ov-pp-dre { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--warn); margin-top: 4px; }
+.ov-popup .map-popup-actions { margin-top: 10px; }
+.ov-popup .map-popup-actions button { flex: 1; padding: 7px 10px; border-radius: 7px; font-weight: 600; }
+
+/* Contrôles zoom aux couleurs de l'app (thème clair + sombre via variables) */
+.leaflet-control-zoom { border: none !important; box-shadow: 0 1px 4px rgba(60,40,30,0.18) !important; border-radius: 9px !important; overflow: hidden; }
+.leaflet-control-zoom a { background: var(--surface) !important; color: var(--ink) !important; border: none !important; width: 33px !important; height: 33px !important; line-height: 33px !important; }
+.leaflet-control-zoom a:hover { background: var(--surface-2) !important; color: var(--bordeaux) !important; }
+.leaflet-control-zoom-in { border-bottom: 1px solid var(--border) !important; }
+
+/* Tooltip des polygones de parcelles */
+.parcelle-tooltip { background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 8px rgba(60,40,30,0.18); font-family: inherit; font-size: 12px; padding: 5px 9px; }
+.parcelle-tooltip::before { display: none; }
+
+/* Attribution discrète mais lisible (obligation de licence IGN/OSM) */
+.leaflet-control-attribution { background: rgba(255,255,255,0.65) !important; font-size: 9.5px; color: #666; padding: 1px 6px; border-radius: 6px 0 0 0; }
+.leaflet-control-attribution a { color: #666; }
+:root[data-theme="dark"] .leaflet-control-attribution { background: rgba(20,16,12,0.6) !important; color: #aaa; }
+:root[data-theme="dark"] .leaflet-control-attribution a { color: #aaa; }
 
 /* ===== MEMBRES ===== */
 .membres-grid { display: grid; gap: 10px; }
@@ -1526,8 +1631,8 @@ body.wk-lock { overflow:hidden; }
 #view-wiki .wk-empty .ico { font-size:34px; opacity:0.4; display:block; margin-bottom:8px; }
 
 #view-wiki .fiche-overlay { position:fixed; inset:0; background:rgba(20,10,14,0.55); backdrop-filter:blur(3px); z-index:3000; display:none; overflow-y:auto; padding:24px 16px; }
-@media (max-width: 900px) {
-  /* Fiche plein écran sur mobile : on décale le contenu sous l'encoche... */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  /* Fiche plein écran sur mobile/tablette tactile : on décale le contenu sous l'encoche... */
   #view-wiki .fiche-overlay { padding-top: calc(28px + env(safe-area-inset-top, 0px)); }
   /* ...et on fait passer la vraie barre en verre dépoli (.mobile-topbar) AU-DESSUS
      de la fiche uniquement quand une fiche est ouverte. Comme elle vit hors du
@@ -1599,7 +1704,7 @@ body.wk-lock { overflow:hidden; }
 <div class="auth-screen" id="auth-screen" style="display:none;">
   <div class="auth-card">
     <div class="auth-logo">
-      <img src="/pwa-icons/icon-192.png" alt="Ordo Vitis" onerror="this.style.display='none';">
+      <svg class="auth-grappe" viewBox="0 0 100 116" width="76" height="88" aria-label="Ordo Vitis"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M50 40 L50 30"/><path d="M50 31 C 44 24, 36 22, 32 26 C 29 29, 33 33, 36 30"/><path d="M50 31 C 56 24, 64 22, 68 26 C 71 29, 67 33, 64 30"/><path d="M50 30 C 47 22, 43 19, 40 20 C 42 22, 41 24, 39 25 C 42 26, 45 25, 47 27"/><path d="M50 30 C 53 22, 57 19, 60 20 C 58 22, 59 24, 61 25 C 58 26, 55 25, 53 27"/><circle cx="26" cy="48" r="8.3"/><circle cx="42" cy="48" r="8.3"/><circle cx="58" cy="48" r="8.3"/><circle cx="74" cy="48" r="8.3"/><circle cx="34" cy="63" r="8.3"/><circle cx="50" cy="63" r="8.3"/><circle cx="66" cy="63" r="8.3"/><circle cx="42" cy="78" r="8.3"/><circle cx="58" cy="78" r="8.3"/><circle cx="50" cy="93" r="8.3"/></g></svg>
       <h1>ORDO VITIS</h1>
       <p>Cahier du vigneron</p>
     </div>
@@ -1860,7 +1965,7 @@ body.wk-lock { overflow:hidden; }
     <!-- Header sidebar : nom domaine + bouton réduction -->
     <div class="sidebar-header">
       <div class="sidebar-domaine">
-        <div class="sidebar-domaine-icon">🍇</div>
+        <div class="sidebar-domaine-icon"><svg class="ov-grappe" viewBox="0 0 100 116" width="21" height="24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M50 40 L50 30"/><path d="M50 31 C 44 24, 36 22, 32 26 C 29 29, 33 33, 36 30"/><path d="M50 31 C 56 24, 64 22, 68 26 C 71 29, 67 33, 64 30"/><path d="M50 30 C 47 22, 43 19, 40 20 C 42 22, 41 24, 39 25 C 42 26, 45 25, 47 27"/><path d="M50 30 C 53 22, 57 19, 60 20 C 58 22, 59 24, 61 25 C 58 26, 55 25, 53 27"/><circle cx="26" cy="48" r="8.3"/><circle cx="42" cy="48" r="8.3"/><circle cx="58" cy="48" r="8.3"/><circle cx="74" cy="48" r="8.3"/><circle cx="34" cy="63" r="8.3"/><circle cx="50" cy="63" r="8.3"/><circle cx="66" cy="63" r="8.3"/><circle cx="42" cy="78" r="8.3"/><circle cx="58" cy="78" r="8.3"/><circle cx="50" cy="93" r="8.3"/></g></svg></div>
         <div class="sidebar-domaine-name" id="domaine-label">Chargement…</div>
       </div>
       <button class="sidebar-toggle" onclick="toggleSidebar()" title="Réduire / agrandir le menu" aria-label="Réduire le menu">
@@ -1871,7 +1976,7 @@ body.wk-lock { overflow:hidden; }
     <!-- Navigation principale -->
     <nav class="sidebar-nav">
       <button class="sidebar-link active" data-view="dashboard" title="Accueil">
-        <span class="sidebar-icon">🏠</span>
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-6h4v6"/></svg></span>
         <span class="sidebar-label">Accueil</span>
         <span class="sidebar-badge" id="sidebar-badge-alertes"></span>
       </button>
@@ -1879,19 +1984,19 @@ body.wk-lock { overflow:hidden; }
       <div class="sidebar-section">
         <div class="sidebar-section-title">Vignes</div>
         <button class="sidebar-link" data-view="parcelles" title="Parcelles">
-          <span class="sidebar-icon">🌿</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c0-7 3-12 9-14-1 8-4 12-9 14z"/><path d="M12 21C9 15 6 12 3 11c1 6 4 9 9 10z"/><path d="M12 21v-4"/></svg></span>
           <span class="sidebar-label">Parcelles</span>
         </button>
         <button class="sidebar-link" data-view="carte" title="Carte">
-          <span class="sidebar-icon">🗺️</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2z"/><path d="M9 3v16M15 5v16"/></svg></span>
           <span class="sidebar-label">Carte</span>
         </button>
         <button class="sidebar-link" data-view="parcours" title="Parcours">
-          <span class="sidebar-icon">🚜</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 9c3 2 5 4 8 3M8 13c3 2 5 3 8 2"/></svg></span>
           <span class="sidebar-label">Parcours</span>
         </button>
         <button class="sidebar-link" data-view="rappels" title="Rappels">
-          <span class="sidebar-icon">📌</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 4 3v2H6v-2l4-3-1-6z"/><path d="M12 14v7"/></svg></span>
           <span class="sidebar-label">Rappels</span>
           <span class="sidebar-badge" id="sidebar-badge-rappels"></span>
         </button>
@@ -1900,16 +2005,16 @@ body.wk-lock { overflow:hidden; }
       <div class="sidebar-section">
         <div class="sidebar-section-title">Interventions</div>
         <button class="sidebar-link" data-view="taches" title="Tâches">
-          <span class="sidebar-icon">✅</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l2.5 2.5L16 9"/><rect x="3" y="4" width="18" height="16" rx="2.5"/></svg></span>
           <span class="sidebar-label">Tâches</span>
           <span class="sidebar-badge" id="sidebar-badge-taches"></span>
         </button>
         <button class="sidebar-link" data-view="traitements" title="Traitements">
-          <span class="sidebar-icon">💊</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6l1 3H8l1-3zM8 5v3l-3.5 12A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.9-2L16 8V5"/><path d="M6 15h12"/></svg></span>
           <span class="sidebar-label">Traitements</span>
         </button>
         <button class="sidebar-link" data-view="calc" title="Calculateur">
-          <span class="sidebar-icon">🧮</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M8 14h2M8 18h2M14 10h2M14 14v4"/></svg></span>
           <span class="sidebar-label">Calculateur</span>
         </button>
       </div>
@@ -1917,7 +2022,7 @@ body.wk-lock { overflow:hidden; }
       <div class="sidebar-section">
         <div class="sidebar-section-title">Intrants</div>
         <button class="sidebar-link" data-view="produits" title="Produits">
-          <span class="sidebar-icon">🧪</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4v3h-4z"/><path d="M10 5v2l-2.5 3.5V19a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-8.5L14 7V5"/><path d="M8 14h8"/></svg></span>
           <span class="sidebar-label">Produits</span>
           <span class="sidebar-badge" id="sidebar-badge-stock"></span>
         </button>
@@ -1926,7 +2031,7 @@ body.wk-lock { overflow:hidden; }
       <div class="sidebar-section">
         <div class="sidebar-section-title">Documentation</div>
         <button class="sidebar-link" data-view="wiki" title="Wiki">
-          <span class="sidebar-icon">📖</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4V4z"/><path d="M20 4h-4a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20V4z"/></svg></span>
           <span class="sidebar-label">Wiki</span>
         </button>
       </div>
@@ -1934,7 +2039,7 @@ body.wk-lock { overflow:hidden; }
       <div class="sidebar-section">
         <div class="sidebar-section-title">Administration</div>
         <button class="sidebar-link" data-view="membres" title="Équipe">
-          <span class="sidebar-icon">👥</span>
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6M17.5 14.9c2.1.6 3.5 2.3 3.5 5.1"/></svg></span>
           <span class="sidebar-label">Équipe</span>
         </button>
       </div>
@@ -1943,23 +2048,23 @@ body.wk-lock { overflow:hidden; }
     <!-- Footer sidebar : utilisateur + actions -->
     <div class="sidebar-footer">
       <div class="sidebar-user">
-        <span class="sidebar-icon">👤</span>
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg></span>
         <span class="sidebar-label" id="user-badge">…</span>
       </div>
       <button class="sidebar-action" onclick="exportData()" title="Export CSV">
-        <span class="sidebar-icon">📥</span>
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span>
         <span class="sidebar-label">Exporter</span>
       </button>
       <button class="sidebar-action" onclick="openSauvegardeComplete()" title="Sauvegarde complète du domaine">
-        <span class="sidebar-icon">🗄️</span>
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg></span>
         <span class="sidebar-label">Sauvegarde</span>
       </button>
       <button class="sidebar-action" onclick="toggleTheme()" id="theme-toggle-btn" title="Mode sombre">
-        <span class="sidebar-icon" id="theme-toggle-icon">🌙</span>
+        <span class="sidebar-icon" id="theme-toggle-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4 8.3 8.3 0 1 0 20 14.5z"/></svg></span>
         <span class="sidebar-label" id="theme-toggle-label">Mode sombre</span>
       </button>
       <button class="sidebar-action" onclick="doLogout()" title="Déconnexion">
-        <span class="sidebar-icon">⏏️</span>
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v2"/><path d="M20 12H9M17 9l3 3-3 3"/></svg></span>
         <span class="sidebar-label">Déconnexion</span>
       </button>
     </div>
@@ -1971,12 +2076,20 @@ body.wk-lock { overflow:hidden; }
   <!-- ZONE PRINCIPALE -->
   <main id="main-content">
 
+    <!-- BARRE DE TITRE DE VUE -->
+    <div class="page-head">
+      <div class="page-head-txt">
+        <h1 class="page-title" id="page-title">Tableau de bord</h1>
+        <div class="page-date" id="page-date"></div>
+      </div>
+    </div>
+
     <!-- DASHBOARD -->
     <section id="view-dashboard" class="view active">
-      <!-- Section Rappels (post-its) - EN PREMIER -->
+      <!-- Section Rappels - EN PREMIER -->
       <div class="rappels-section" id="rappels-section">
         <div class="rappels-header">
-          <div class="rappels-title">📌 Rappels</div>
+          <div class="rappels-title"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 4 3v2H6v-2l4-3-1-6z"/><path d="M12 14v7"/></svg> Rappels <span class="rappels-hint" id="rappels-hint"></span></div>
           <div style="display:flex; align-items:center; gap:10px;">
             <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer;">
               <input type="checkbox" id="rappels-show-fait" onchange="renderRappels()">
@@ -1988,10 +2101,26 @@ body.wk-lock { overflow:hidden; }
       </div>
       
       <div class="stats">
-        <div class="stat"><div class="label">Parcelles</div><div class="value" id="stat-parcelles">—</div><div class="sub" id="stat-surface">—</div></div>
-        <div class="stat"><div class="label">Traitements (saison)</div><div class="value" id="stat-traitements">—</div><div class="sub" id="stat-traitements-30j">—</div></div>
-        <div class="stat alert"><div class="label">Parcelles en DRE</div><div class="value" id="stat-dre">—</div><div class="sub">Délai de rentrée actif</div></div>
-        <div class="stat"><div class="label">Produits référencés</div><div class="value" id="stat-produits">—</div><div class="sub">Catalogue phytosanitaire</div></div>
+        <div class="stat">
+          <div class="stat-top"><div class="label">Parcelles</div><span class="stat-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2z"/><path d="M9 3v16M15 5v16"/></svg></span></div>
+          <div class="value" id="stat-parcelles">—</div><div class="sub" id="stat-surface">—</div>
+          <button class="stat-link" onclick="gotoView('parcelles')">Voir le détail →</button>
+        </div>
+        <div class="stat">
+          <div class="stat-top"><div class="label">Traitements (saison)</div><span class="stat-ico gold"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l1 3H8l1-3zM8 5v3l-3.5 12A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.9-2L16 8V5"/><path d="M6 15h12"/></svg></span></div>
+          <div class="value" id="stat-traitements">—</div><div class="sub" id="stat-traitements-30j">—</div>
+          <button class="stat-link" onclick="gotoView('traitements')">Voir le détail →</button>
+        </div>
+        <div class="stat alert">
+          <div class="stat-top"><div class="label">Parcelles en DRE</div><span class="stat-ico vine"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="M9 12l2 2 4-4"/></svg></span></div>
+          <div class="value" id="stat-dre">—</div><div class="sub">Délai de rentrée actif</div>
+          <button class="stat-link" onclick="gotoView('carte')">Voir sur la carte →</button>
+        </div>
+        <div class="stat">
+          <div class="stat-top"><div class="label">Produits référencés</div><span class="stat-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v3h-4z"/><path d="M10 5v2l-2.5 3.5V19a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-8.5L14 7V5"/><path d="M8 14h8"/></svg></span></div>
+          <div class="value" id="stat-produits">—</div><div class="sub">Catalogue phytosanitaire</div>
+          <button class="stat-link" onclick="gotoView('produits')">Voir le détail →</button>
+        </div>
       </div>
       
       <div id="alerts-container"></div>
@@ -2297,7 +2426,7 @@ body.wk-lock { overflow:hidden; }
       
       <div class="form-row">
         <label>Texte du rappel *</label>
-        <textarea id="r-texte" placeholder="ex: Réparer piquet Birot rang 5..." style="min-height: 80px; font-family: 'Kalam', cursive; font-size: 17px;" autofocus></textarea>
+        <textarea id="r-texte" placeholder="ex: Réparer piquet Birot rang 5..." style="min-height: 80px; font-size: 15px; line-height: 1.4;" autofocus></textarea>
       </div>
       
       <div class="form-grid">
@@ -2314,6 +2443,12 @@ body.wk-lock { overflow:hidden; }
             <option value="urgent">⚠️ Urgent</option>
           </select>
         </div>
+      </div>
+
+      <div class="form-row">
+        <label>Échéance (facultatif)</label>
+        <input type="date" id="r-echeance">
+        <div style="font-size:11.5px; color:var(--muted); margin-top:5px; font-style:italic;">Laissez vide si le rappel n'a pas de date limite.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2834,6 +2969,50 @@ body.wk-lock { overflow:hidden; }
           <label style="font-size:13px; font-weight:600; color:var(--muted);">Couleur :</label>
           <div id="p-couleur-palette" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
           <input type="color" id="p-couleur" style="width:36px; height:32px; border:1px solid var(--border); border-radius:5px; cursor:pointer;" title="Couleur personnalisée">
+        </div>
+      </div>
+      
+      <!-- Soleil & effeuillage -->
+      <div id="p-soleil-section" style="display:none; margin-top:8px; padding:12px 14px; background:var(--cream); border-radius:8px; border:1px solid var(--border);">
+        <div style="font-size:13px; font-weight:600; color:var(--bordeaux); margin-bottom:8px;">☀️ Soleil &amp; effeuillage</div>
+        <div id="p-soleil-nogps" style="display:none; font-size:12px; color:var(--muted);">Renseigne la position GPS (latitude / longitude) ci-dessus, puis enregistre, pour activer le calcul du soleil.</div>
+        <div id="p-soleil-body" style="display:none;">
+          <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
+            <svg width="220" height="220" viewBox="0 0 260 260" style="flex:0 0 auto;">
+              <circle cx="130" cy="130" r="96" fill="none" stroke="var(--border)" stroke-width="1"/>
+              <text x="130" y="24" text-anchor="middle" style="font-size:11px; fill:var(--muted);">N</text>
+              <text x="246" y="134" text-anchor="middle" style="font-size:11px; fill:var(--muted);">E</text>
+              <text x="130" y="248" text-anchor="middle" style="font-size:11px; fill:var(--muted);">S</text>
+              <text x="14" y="134" text-anchor="middle" style="font-size:11px; fill:var(--muted);">O</text>
+              <line id="sp-rays" x1="130" y1="130" x2="130" y2="130" stroke="#E8A317" stroke-width="2" opacity="0"/>
+              <line id="sp-faceA" x1="130" y1="130" x2="130" y2="130" stroke="#8aa0b4" stroke-width="9" stroke-linecap="round" opacity="0.5"/>
+              <line id="sp-faceB" x1="130" y1="130" x2="130" y2="130" stroke="#8aa0b4" stroke-width="9" stroke-linecap="round" opacity="0.5"/>
+              <line id="sp-row1" x1="130" y1="130" x2="130" y2="130" stroke="var(--vine)" stroke-width="2.5" opacity="0.85"/>
+              <line id="sp-row2" x1="130" y1="130" x2="130" y2="130" stroke="var(--vine)" stroke-width="2.5" opacity="0.85"/>
+              <line id="sp-row3" x1="130" y1="130" x2="130" y2="130" stroke="var(--vine)" stroke-width="2.5" opacity="0.85"/>
+              <circle cx="130" cy="130" r="2.5" fill="var(--muted)"/>
+              <circle id="sp-sun" cx="130" cy="130" r="7" fill="#E8A317" opacity="0"/>
+              <text id="sp-lblA" x="130" y="130" text-anchor="middle" dominant-baseline="central" style="font-size:11px; font-weight:600; fill:var(--ink);"></text>
+              <text id="sp-lblB" x="130" y="130" text-anchor="middle" dominant-baseline="central" style="font-size:11px; font-weight:600; fill:var(--ink);"></text>
+            </svg>
+            <div style="flex:1 1 240px; min-width:220px;">
+              <div class="form-row" style="margin-bottom:10px;">
+                <label style="display:flex; justify-content:space-between; gap:8px;">Orientation des rangs <span id="p-orientation-label" style="font-weight:600; color:var(--ink);">0° (nord–sud)</span></label>
+                <input type="range" id="p-orientation" min="0" max="179" step="1" value="0" oninput="updateSoleilPanel()">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:6px;">
+                  <button type="button" class="btn btn-secondary btn-icon" onclick="lancerOrientationRangs()">📐 Tracer sur la carte</button>
+                  <span class="help-text" style="margin:0;">ou ajuste le curseur (rangs en vert).</span>
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom:10px;">
+                <label style="display:flex; justify-content:space-between; gap:8px;">Heure <span id="p-soleil-heure-label" style="font-weight:600; color:var(--ink);"></span></label>
+                <input type="range" id="p-soleil-heure" min="4" max="22" step="0.25" value="12" oninput="updateSoleilPanel()">
+              </div>
+              <div id="sp-suninfo" style="font-size:12px; color:var(--muted); margin-bottom:4px;"></div>
+              <div id="sp-dayarc" style="font-size:12px; color:var(--muted);"></div>
+            </div>
+          </div>
+          <div id="sp-reco" style="margin-top:10px; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-size:13px; line-height:1.5; color:var(--ink);"></div>
         </div>
       </div>
       
@@ -4525,7 +4704,47 @@ function toggleElementByPerm(selector, permission) {
   });
 }
 
-// ============== RAPPELS (POST-ITS) ==============
+// ============== RAPPELS ==============
+
+// Nombre de jours entre aujourd'hui et l'échéance (négatif = en retard, null = pas d'échéance)
+function joursRestants(echeance) {
+  if (!echeance) return null;
+  const auj = new Date(); auj.setHours(0, 0, 0, 0);
+  const d = new Date(echeance + 'T00:00:00');
+  if (isNaN(d.getTime())) return null;
+  return Math.round((d - auj) / 86400000);
+}
+
+// Niveau d'urgence combiné : échéance proche OU priorité urgente
+function niveauUrgence(r) {
+  if (r.fait) return 'ok';
+  const j = joursRestants(r.echeance);
+  if (j !== null) {
+    if (j < 0) return 'retard';
+    if (j <= 2) return 'haute';
+    if (j <= 7) return 'moyenne';
+    return r.priorite === 'urgent' ? 'haute' : 'basse';
+  }
+  return r.priorite === 'urgent' ? 'haute' : 'basse';
+}
+
+// Badge d'échéance : « J-3 », « Aujourd'hui », « Retard 2 j »…
+function renderEcheance(r) {
+  const j = joursRestants(r.echeance);
+  if (j === null) {
+    return (r.priorite === 'urgent' && !r.fait) ? '<span class="rap-badge haute">Urgent</span>' : '';
+  }
+  const dateTxt = new Date(r.echeance + 'T00:00:00')
+    .toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  let label, cls;
+  if (j < 0) { label = 'Retard ' + Math.abs(j) + ' j'; cls = 'retard'; }
+  else if (j === 0) { label = "Aujourd'hui"; cls = 'haute'; }
+  else if (j === 1) { label = 'Demain'; cls = 'haute'; }
+  else if (j <= 7) { label = 'J-' + j; cls = 'moyenne'; }
+  else { label = 'J-' + j; cls = 'basse'; }
+  if (r.fait) cls = 'ok';
+  return `<span class="rap-echeance"><span class="rap-date">${dateTxt}</span><span class="rap-badge ${cls}">${label}</span></span>`;
+}
 
 // Rendu du bloc rappels sur l'accueil (compact)
 function renderRappels() {
@@ -4548,7 +4767,7 @@ function renderRappelsVue() {
   renderRappelsList('rappels-vue-grid', 'vue');
 }
 
-// Rendu unifié : grille de post-its avec filtres optionnels
+// Rendu unifié : grille de cartes de rappel avec filtres optionnels
 function renderRappelsList(containerId, mode) {
   const grid = document.getElementById(containerId);
   if (!grid) return;
@@ -4559,6 +4778,20 @@ function renderRappelsList(containerId, mode) {
     // Sur l'accueil : checkbox "afficher les faits"
     const showFait = document.getElementById('rappels-show-fait')?.checked || false;
     if (!showFait) rappels = rappels.filter(r => !r.fait);
+
+    // Ligne d'information : nombre en cours + alerte d'échéance la plus proche
+    const hint = document.getElementById('rappels-hint');
+    if (hint) {
+      const actifs = cache.rappels.filter(r => !r.fait);
+      const parts = [actifs.length + ' en cours'];
+      const retard = actifs.filter(r => { const j = joursRestants(r.echeance); return j !== null && j < 0; }).length;
+      const demain = actifs.filter(r => joursRestants(r.echeance) === 1).length;
+      const auj = actifs.filter(r => joursRestants(r.echeance) === 0).length;
+      if (retard) parts.push(retard + ' en retard');
+      else if (auj) parts.push(auj + (auj > 1 ? ' échéances' : ' échéance') + " aujourd'hui");
+      else if (demain) parts.push(demain + (demain > 1 ? ' échéances' : ' échéance') + ' demain');
+      hint.textContent = actifs.length ? parts.join(' · ') : '';
+    }
   } else {
     // Sur la vue dédiée : filtres complets
     const priorite = document.getElementById('rappels-filter-priorite')?.value || '';
@@ -4572,17 +4805,22 @@ function renderRappelsList(containerId, mode) {
     // 'tous' : pas de filtre
   }
   
-  // Tri : urgents d'abord, puis non-faits, puis par date
+  // Tri : non-faits d'abord, puis par urgence temporelle (echeance la plus proche),
+  // puis priorite urgente, puis les plus recents
   rappels.sort((a, b) => {
     if (a.fait !== b.fait) return a.fait ? 1 : -1;
+    const ja = joursRestants(a.echeance), jb = joursRestants(b.echeance);
+    if (ja !== null && jb !== null && ja !== jb) return ja - jb;
+    if (ja !== null && jb === null) return -1;
+    if (ja === null && jb !== null) return 1;
     if (a.priorite !== b.priorite) return a.priorite === 'urgent' ? -1 : 1;
     return b.created_at.localeCompare(a.created_at);
   });
   
   const canCreate = peut('traitements_creer') || estAdmin();
   const addButton = canCreate ? `
-    <button class="post-it-add" onclick="openRappelModal()">
-      <div class="post-it-add-icon">+</div>
+    <button class="rap-add" onclick="openRappelModal()">
+      <div class="rap-add-icon">+</div>
       <div>Ajouter un rappel</div>
     </button>
   ` : '';
@@ -4594,16 +4832,20 @@ function renderRappelsList(containerId, mode) {
   
   grid.innerHTML = rappels.map(r => {
     const parcelle = r.parcelle_id ? getParcelle(r.parcelle_id) : null;
-    const parcelleHtml = parcelle ? `<div class="post-it-parcelle">📍 ${parcelle.nom}</div>` : '<div></div>';
-    const urgentBadge = r.priorite === 'urgent' && !r.fait ? `<span class="post-it-urgent-badge">Urgent</span>` : '';
-    const texteEchape = (r.texte || '').replace(/</g, '&lt;');
-    
-    return `<div class="post-it ${r.priorite || 'normale'} ${r.fait ? 'fait' : ''}" onclick="toggleRappelFait('${r.id}', event)">
-      ${canCreate ? `<button class="post-it-delete" onclick="event.stopPropagation(); deleteRappel('${r.id}');" title="Supprimer">×</button>` : ''}
-      <div class="post-it-texte">${texteEchape}</div>
-      <div class="post-it-footer">
+    const parcelleHtml = parcelle
+      ? `<div class="rap-parcelle"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>${escapeHtml(parcelle.nom)}</div>`
+      : '<div></div>';
+    const texteEchape = escapeHtml(r.texte || '');
+    const ech = renderEcheance(r);
+    const niveau = niveauUrgence(r);
+
+    return `<div class="rap-card ${niveau}${r.fait ? ' fait' : ''}" onclick="toggleRappelFait('${r.id}', event)">
+      <span class="rap-pin" aria-hidden="true"></span>
+      ${canCreate ? `<button class="rap-delete" onclick="event.stopPropagation(); deleteRappel('${r.id}');" title="Supprimer" aria-label="Supprimer">×</button>` : ''}
+      <div class="rap-texte">${texteEchape}</div>
+      <div class="rap-footer">
         ${parcelleHtml}
-        ${urgentBadge}
+        ${ech}
       </div>
     </div>`;
   }).join('') + addButton;
@@ -4633,11 +4875,13 @@ function openRappelModal(rappelId) {
       document.getElementById('r-texte').value = r.texte || '';
       document.getElementById('r-parcelle').value = r.parcelle_id || '';
       document.getElementById('r-priorite').value = r.priorite || 'normale';
+      document.getElementById('r-echeance').value = r.echeance || '';
     }
   } else {
     document.getElementById('r-texte').value = '';
     document.getElementById('r-parcelle').value = '';
     document.getElementById('r-priorite').value = 'normale';
+    document.getElementById('r-echeance').value = '';
   }
   
   document.getElementById('modal-rappel').classList.add('active');
@@ -4653,7 +4897,8 @@ async function saveRappel() {
     domaine_id: currentDomaine.id,
     texte: texte,
     parcelle_id: document.getElementById('r-parcelle').value || null,
-    priorite: document.getElementById('r-priorite').value || 'normale'
+    priorite: document.getElementById('r-priorite').value || 'normale',
+    echeance: document.getElementById('r-echeance').value || null
   };
   
   if (id) {
@@ -4676,7 +4921,7 @@ async function saveRappel() {
 
 async function toggleRappelFait(rappelId, event) {
   // Si on clique sur le bouton supprimer, ne pas basculer
-  if (event && event.target.classList.contains('post-it-delete')) return;
+  if (event && event.target.closest && event.target.closest('.rap-delete')) return;
   
   // Si on est saisonnier, on peut pas modifier
   if (!peut('traitements_creer') && !estAdmin()) {
@@ -5102,6 +5347,7 @@ function initParcoursMap() {
   if (typeof L === 'undefined') { if (el) el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">⚠️ Connexion internet requise pour la carte.</div>'; return; }
   if (!parcoursMap) {
     parcoursMap = L.map('parcours-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    parcoursMap.attributionControl.setPrefix(false);
     L.tileLayer('https://data.geopf.fr/wmts?layer=ORTHOIMAGERY.ORTHOPHOTOS&style=normal&tilematrixset=PM&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y}', { attribution: '© IGN Géoplateforme', maxZoom: 19 }).addTo(parcoursMap);
     pcTraceLayer = L.layerGroup().addTo(parcoursMap);
     pcReperesLayer = L.layerGroup().addTo(parcoursMap);
@@ -5793,6 +6039,8 @@ function showScreen(s) {
   if (s === 'app') {
     app.classList.add('active');
     app.style.display = 'flex';
+    const cur = document.querySelector('.sidebar-link.active');
+    if (typeof setPageTitle === 'function') setPageTitle(cur ? cur.dataset.view : 'dashboard');
   } else {
     app.classList.remove('active');
     app.style.display = 'none';
@@ -5892,7 +6140,10 @@ function applyTheme(theme) {
   const icon = document.getElementById('theme-toggle-icon');
   const label = document.getElementById('theme-toggle-label');
   const btn = document.getElementById('theme-toggle-btn');
-  if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const SVG_OPEN = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  const ICO_MOON = SVG_OPEN + '<path d="M20 14.5A8.2 8.2 0 0 1 9.5 4 8.3 8.3 0 1 0 20 14.5z"/></svg>';
+  const ICO_SUN = SVG_OPEN + '<circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg>';
+  if (icon) icon.innerHTML = theme === 'dark' ? ICO_SUN : ICO_MOON;
   if (label) label.textContent = theme === 'dark' ? 'Mode clair' : 'Mode sombre';
   if (btn) btn.title = theme === 'dark' ? 'Repasser en clair' : 'Passer en sombre';
   const meta = document.querySelector('meta[name="theme-color"]');
@@ -6349,12 +6600,44 @@ document.addEventListener('keypress', (e) => {
 });
 
 // ============== NAVIGATION SIDEBAR ==============
+// ===== TITRE DE VUE =====
+const VIEW_TITLES = {
+  dashboard: 'Tableau de bord',
+  parcelles: 'Parcelles',
+  carte: 'Carte',
+  parcours: 'Parcours',
+  rappels: 'Rappels',
+  taches: 'Tâches',
+  traitements: 'Traitements',
+  calc: 'Calculateur de bouillie',
+  produits: 'Produits',
+  wiki: 'Wiki',
+  membres: 'Équipe'
+};
+function setPageTitle(view) {
+  const t = document.getElementById('page-title');
+  const d = document.getElementById('page-date');
+  if (t) t.textContent = VIEW_TITLES[view] || 'Ordo Vitis';
+  if (d) {
+    const jour = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const dom = (typeof currentDomaine !== 'undefined' && currentDomaine && currentDomaine.nom) ? ' · ' + currentDomaine.nom : '';
+    d.textContent = jour.charAt(0).toUpperCase() + jour.slice(1) + dom;
+  }
+}
+
+// Navigation programmatique : réutilise le gestionnaire de la sidebar
+function gotoView(view) {
+  const btn = document.querySelector('.sidebar-link[data-view="' + view + '"]');
+  if (btn) btn.click();
+}
+
 document.querySelectorAll('.sidebar-link').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.sidebar-link').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    setPageTitle(btn.dataset.view);
     if (btn.dataset.view === 'dashboard') renderDashboard();
     if (btn.dataset.view === 'traitements') renderTraitements();
     if (btn.dataset.view === 'parcelles') renderParcelles();
@@ -6366,8 +6649,8 @@ document.querySelectorAll('.sidebar-link').forEach(btn => {
     if (btn.dataset.view === 'taches') renderTaches();
     if (btn.dataset.view === 'parcours') renderParcours();
     if (btn.dataset.view === 'wiki') renderWiki();
-    // Fermer la sidebar en mobile après sélection
-    if (window.innerWidth <= 900) {
+    // Fermer la sidebar (mode tiroir) après sélection — mobile ET tablette tactile en paysage
+    if (window.matchMedia('(max-width: 900px), (hover: none) and (pointer: coarse)').matches) {
       document.getElementById('sidebar').classList.remove('sidebar-mobile-open');
     }
   });
@@ -6566,7 +6849,7 @@ function renderDashboard() {
     return `<tr><td>${fmtDate(t.date)}${t.numero_traitement?`<br><span style="font-size:11px;color:var(--bordeaux);font-weight:600">N°${t.numero_traitement}</span>`:''}${t.numero_passe?`<br><span style="font-size:11px;color:var(--muted)">${t.numero_passe}</span>`:''}</td><td>${getProduitsResume(t)}</td><td class="hide-mobile">${noms.slice(0,2).join(', ')}${noms.length>2?` +${noms.length-2}`:''}</td><td>${cibles}</td><td class="hide-mobile">${badge}</td></tr>`;
   }).join('');
   
-  // Afficher les rappels (post-its)
+  // Afficher les rappels
   renderRappels();
   
   // Mettre à jour les badges de notification dans la sidebar
@@ -7089,6 +7372,278 @@ function renderParcelles() {
   if (!search) attachParcellesDragAndDrop();
 }
 
+// ============== SOLEIL & EFFEUILLAGE ==============
+// Position du soleil (azimut depuis le nord en °, hauteur en °) — calcul 100% local, hors-ligne.
+function sunPosition(date, lat, lng) {
+  const rad = Math.PI / 180, dayMs = 86400000, J1970 = 2440588, J2000 = 2451545;
+  const d = date.valueOf() / dayMs - 0.5 + J1970 - J2000;
+  const e = rad * 23.4397;
+  const lw = rad * -lng, phi = rad * lat;
+  const M = rad * (357.5291 + 0.98560028 * d);
+  const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+  const L = M + C + rad * 102.9372 + Math.PI;
+  const dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const ra = Math.atan2(Math.sin(L) * Math.cos(e), Math.cos(L));
+  const H = rad * (280.16 + 360.9856235 * d) - lw - ra;
+  const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H));
+  let az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi)) * 180 / Math.PI + 180;
+  az = ((az % 360) + 360) % 360;
+  return { azimuth: az, altitude: alt * 180 / Math.PI };
+}
+const _DIRS_FR = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+function dirFr(az) { return _DIRS_FR[Math.round((((az % 360) + 360) % 360) / 45) % 8]; }
+
+// Balaye la journée (pas de 10 min) : azimuts du lever, du midi solaire et du coucher.
+function dayArc(date, lat, lng) {
+  const base = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
+  let lever = null, coucher = null, midi = null, maxAlt = -90, prevAlt = null;
+  for (let min = 0; min <= 1440; min += 10) {
+    const s = sunPosition(new Date(base.getTime() + min * 60000), lat, lng);
+    if (s.altitude > maxAlt) { maxAlt = s.altitude; midi = s.azimuth; }
+    if (prevAlt !== null) {
+      if (prevAlt < 0 && s.altitude >= 0 && lever === null) lever = s.azimuth;
+      if (prevAlt >= 0 && s.altitude < 0 && lever !== null && coucher === null) coucher = s.azimuth;
+    }
+    prevAlt = s.altitude;
+  }
+  return { lever, midi, coucher, maxAlt };
+}
+
+let _soleilParc = null;
+
+function openSoleilForParcelle(p) {
+  const sec = document.getElementById('p-soleil-section');
+  if (!sec) return;
+  _soleilParc = p;
+  const hasGps = p && p.lat != null && p.lng != null;
+  sec.style.display = 'block';
+  document.getElementById('p-soleil-nogps').style.display = hasGps ? 'none' : 'block';
+  document.getElementById('p-soleil-body').style.display = hasGps ? 'block' : 'none';
+  document.getElementById('p-orientation').value = (p && p.orientation_rangs != null) ? p.orientation_rangs : 0;
+  const now = new Date();
+  document.getElementById('p-soleil-heure').value = (now.getHours() + now.getMinutes() / 60).toFixed(2);
+  if (hasGps) updateSoleilPanel();
+}
+
+function updateSoleilPanel() {
+  const p = _soleilParc; if (!p || p.lat == null || p.lng == null) return;
+  const theta = +document.getElementById('p-orientation').value;
+  const hour = +document.getElementById('p-soleil-heure').value;
+  const now = new Date();
+  const isNow = Math.abs(hour - (now.getHours() + now.getMinutes() / 60)) < 0.13;
+  const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Math.floor(hour), Math.round((hour % 1) * 60), 0);
+  const s = sunPosition(dt, p.lat, p.lng);
+  const az = s.azimuth, alt = s.altitude;
+  const cx = 130, cy = 130, R = 96, D2R = Math.PI / 180;
+  const th = theta * D2R, rdx = Math.sin(th), rdy = -Math.cos(th), nx = Math.cos(th), ny = Math.sin(th);
+  const set = (id, x1, y1, x2, y2) => { const l = document.getElementById(id); l.setAttribute('x1', x1.toFixed(1)); l.setAttribute('y1', y1.toFixed(1)); l.setAttribute('x2', x2.toFixed(1)); l.setAttribute('y2', y2.toFixed(1)); };
+  const rowLine = (id, off) => set(id, cx + nx * off - rdx * 78, cy + ny * off - rdy * 78, cx + nx * off + rdx * 78, cy + ny * off + rdy * 78);
+  rowLine('sp-row1', 0); rowLine('sp-row2', 15); rowLine('sp-row3', -15);
+  const nA = (((theta + 90) % 360) + 360) % 360, nB = (((theta - 90) % 360) + 360) % 360;
+  const sr = Math.sin((az - theta) * D2R), aLit = alt > 0 && sr > 0, bLit = alt > 0 && sr < 0;
+  const faceLine = (id, sign) => set(id, cx + sign * nx * 26 - rdx * 64, cy + sign * ny * 26 - rdy * 64, cx + sign * nx * 26 + rdx * 64, cy + sign * ny * 26 + rdy * 64);
+  faceLine('sp-faceA', 1); faceLine('sp-faceB', -1);
+  document.getElementById('sp-faceA').setAttribute('stroke', aLit ? '#E0972A' : '#8aa0b4');
+  document.getElementById('sp-faceA').setAttribute('opacity', aLit ? '0.95' : '0.5');
+  document.getElementById('sp-faceB').setAttribute('stroke', bLit ? '#E0972A' : '#8aa0b4');
+  document.getElementById('sp-faceB').setAttribute('opacity', bLit ? '0.95' : '0.5');
+  const lblA = document.getElementById('sp-lblA'), lblB = document.getElementById('sp-lblB');
+  lblA.setAttribute('x', (cx + nx * 44).toFixed(1)); lblA.setAttribute('y', (cy + ny * 44).toFixed(1)); lblA.textContent = dirFr(nA);
+  lblB.setAttribute('x', (cx - nx * 44).toFixed(1)); lblB.setAttribute('y', (cy - ny * 44).toFixed(1)); lblB.textContent = dirFr(nB);
+  const sun = document.getElementById('sp-sun'), rays = document.getElementById('sp-rays');
+  const sx = cx + R * Math.sin(az * D2R), sy = cy - R * Math.cos(az * D2R);
+  sun.setAttribute('cx', sx.toFixed(1)); sun.setAttribute('cy', sy.toFixed(1));
+  if (alt > 0) {
+    sun.setAttribute('opacity', '1'); sun.setAttribute('r', (7 + alt / 90 * 4).toFixed(1)); sun.setAttribute('fill', '#E8A317');
+    rays.setAttribute('x1', sx.toFixed(1)); rays.setAttribute('y1', sy.toFixed(1)); rays.setAttribute('x2', cx); rays.setAttribute('y2', cy); rays.setAttribute('opacity', '0.2');
+  } else { sun.setAttribute('opacity', '0.45'); sun.setAttribute('r', '6'); sun.setAttribute('fill', '#9aa0a6'); rays.setAttribute('opacity', '0'); }
+  const m = (((theta % 180) + 180) % 180);
+  let axis; if (m <= 22.5 || m >= 157.5) axis = 'nord–sud'; else if (m >= 67.5 && m <= 112.5) axis = 'est–ouest'; else if (m > 22.5 && m < 67.5) axis = 'NE–SO'; else axis = 'NO–SE';
+  document.getElementById('p-orientation-label').textContent = Math.round(theta) + '° (' + axis + ')';
+  const hh = Math.floor(hour), mm = Math.round((hour - hh) * 60);
+  document.getElementById('p-soleil-heure-label').textContent = (isNow ? 'maintenant · ' : '') + hh + 'h' + (mm < 10 ? '0' + mm : mm);
+  const sunTxt = document.getElementById('sp-suninfo');
+  if (alt > 0) sunTxt.textContent = 'Soleil ' + Math.round(az) + '° (' + dirFr(az) + '), hauteur ' + Math.round(alt) + '° — éclaire la face ' + dirFr(sr > 0 ? nA : nB);
+  else sunTxt.textContent = 'Soleil sous l’horizon à cette heure';
+  const arc = dayArc(now, p.lat, p.lng);
+  const arcEl = document.getElementById('sp-dayarc');
+  arcEl.textContent = (arc.lever != null && arc.coucher != null) ? ('Aujourd’hui : lever ' + dirFr(arc.lever) + ', midi plein ' + dirFr(arc.midi) + ', coucher ' + dirFr(arc.coucher) + '.') : '';
+  const eN = (nA < 180) ? nA : nB, wN = (nA < 180) ? nB : nA;
+  const distNS = Math.min(theta, 180 - theta), distEW = Math.abs(theta - 90);
+  const reco = document.getElementById('sp-reco');
+  if (distNS <= distEW) {
+    reco.textContent = 'Rangs plutôt nord–sud. Face ' + dirFr(eN) + ' = soleil du matin → effeuille davantage (lumière douce, sèche la rosée, peu de risque d’échaudage). Face ' + dirFr(wN) + ' = soleil de l’après-midi → garde plus de feuilles pour protéger les grappes de la chaleur.';
+  } else {
+    const sN = (Math.abs(nA - 180) < Math.abs(nB - 180)) ? nA : nB, noN = (Math.abs(nA - 180) < Math.abs(nB - 180)) ? nB : nA;
+    reco.textContent = 'Rangs plutôt est–ouest. Face ' + dirFr(sN) + ' = exposée une grande partie de la journée → effeuillage prudent / asymétrique (risque d’échaudage). Face ' + dirFr(noN) + ' = à l’ombre → tu peux effeuiller librement pour l’aération.';
+  }
+}
+
+// ----- Tracer l'orientation des rangs directement sur la carte -----
+function rowBearingDeg(lat1, lng1, lat2, lng2) {
+  const r = Math.PI / 180;
+  const p1 = lat1 * r, p2 = lat2 * r, dL = (lng2 - lng1) * r;
+  const y = Math.sin(dL) * Math.cos(p2);
+  const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dL);
+  return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+}
+function orientationFromBearing(b) { return ((Math.round(b) % 180) + 180) % 180; }
+
+let orientationDrawState = null;
+
+function lancerOrientationRangs() {
+  const pid = document.getElementById('p-id').value;
+  if (!pid) { alert('Enregistrez d\'abord la parcelle.'); return; }
+  document.querySelectorAll('.sidebar-link').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelector('.sidebar-link[data-view="carte"]')?.classList.add('active');
+  document.getElementById('view-carte').classList.add('active');
+  if (!mapInitialized) initMap();
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize();
+      renderMapPolygones();
+      renderMapMarkers();
+      demarrerOrientationRangs(pid);
+    }
+  }, 150);
+}
+
+function demarrerOrientationRangs(parcelleId) {
+  if (!map) { alert('La carte n\'est pas initialisée.'); return; }
+  const parcelle = getParcelle(parcelleId);
+  if (!parcelle) return;
+  closeModal('modal-parcelle');
+  setMapLayer('photo');
+  const zones = parcelle.polygone ? polygonToZones(parcelle.polygone) : [];
+  if (zones.length) {
+    try { map.fitBounds(L.featureGroup(zones.map(c => L.polygon(c))).getBounds().pad(0.3)); }
+    catch (err) { if (typeof parcelle.lat === 'number') map.setView([parcelle.lat, parcelle.lng], 19); }
+  } else if (typeof parcelle.lat === 'number' && typeof parcelle.lng === 'number') {
+    map.setView([parcelle.lat, parcelle.lng], 19);
+  }
+  // Retirer les couches interactives (polygones remplis + marqueurs) qui captureraient les clics
+  Object.values(parcellePolygons).forEach(l => { try { map.removeLayer(l); } catch (e) {} });
+  parcellePolygons = {};
+  Object.values(parcelleMarkers).forEach(m => { try { map.removeLayer(m); } catch (e) {} });
+  parcelleMarkers = {};
+  // Référence non-cliquable : contour de la parcelle (les clics passent à travers)
+  const refGroup = L.featureGroup().addTo(map);
+  const col = getParcelleColor(parcelle);
+  zones.forEach(coords => {
+    L.polygon(coords, { color: col, weight: 2, fill: true, fillColor: col, fillOpacity: 0.12, interactive: false }).addTo(refGroup);
+  });
+  orientationDrawState = { parcelleId, refGroup, markers: [], line: null, points: [], bearing: null };
+  map.getContainer().style.cursor = 'crosshair';
+  map.on('click', onOrientationMapClick);
+  afficherBarreOrientation(parcelle);
+}
+
+function onOrientationMapClick(e) {
+  const st = orientationDrawState; if (!st || st.points.length >= 2) return;
+  st.points.push(e.latlng);
+  const mk = L.circleMarker(e.latlng, { radius: 6, color: '#fff', weight: 2, fillColor: '#E8731F', fillOpacity: 1, interactive: false }).addTo(map);
+  st.markers.push(mk);
+  if (st.points.length === 2) {
+    st.line = L.polyline(st.points, { color: '#E8731F', weight: 4, opacity: 0.95, interactive: false }).addTo(map);
+    st.bearing = rowBearingDeg(st.points[0].lat, st.points[0].lng, st.points[1].lat, st.points[1].lng);
+    map.getContainer().style.cursor = '';
+  }
+  majBarreOrientation();
+}
+
+function afficherBarreOrientation(parcelle) {
+  const ex = document.getElementById('orientation-instructions'); if (ex) ex.remove();
+  const bar = document.createElement('div');
+  bar.id = 'orientation-instructions';
+  bar.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface); padding:14px 20px; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.2); z-index:1500; max-width:92%; text-align:center;';
+  bar.innerHTML =
+    '<div style="font-weight:600; color:var(--bordeaux); margin-bottom:6px;">📐 Orientation des rangs : ' + (parcelle.nom || '').replace(/</g, '&lt;') + '</div>' +
+    '<div id="orientation-msg" style="font-size:13px; color:var(--muted); margin-bottom:10px;">Clique <strong>2 points</strong> le long d\'un rang sur la photo aérienne.</div>' +
+    '<button id="orientation-valider" class="btn btn-primary" onclick="validerOrientationRangs()" style="margin-right:8px; display:none;">✓ Valider</button>' +
+    '<button id="orientation-undo" class="btn btn-secondary" onclick="annulerDernierPointOrientation()" style="margin-right:8px; display:none;">↩ Annuler le dernier point</button>' +
+    '<button id="orientation-refaire" class="btn btn-secondary" onclick="refaireOrientationRangs()" style="margin-right:8px; display:none;">↺ Recommencer</button>' +
+    '<button class="btn btn-secondary" onclick="annulerOrientationRangs()">Annuler</button>';
+  document.body.appendChild(bar);
+}
+
+function majBarreOrientation() {
+  const st = orientationDrawState; if (!st) return;
+  const msg = document.getElementById('orientation-msg');
+  const vb = document.getElementById('orientation-valider');
+  const rf = document.getElementById('orientation-refaire');
+  const ud = document.getElementById('orientation-undo');
+  const n = st.points.length;
+  if (ud) ud.style.display = n >= 1 ? '' : 'none';
+  if (rf) rf.style.display = n >= 1 ? '' : 'none';
+  if (vb) vb.style.display = n === 2 ? '' : 'none';
+  if (!msg) return;
+  if (n === 0) msg.innerHTML = 'Clique <strong>2 points</strong> le long d\'un rang sur la photo aérienne.';
+  else if (n === 1) msg.innerHTML = 'Bien — clique le <strong>2ᵉ point</strong> plus loin sur le même rang.';
+  else {
+    const o = orientationFromBearing(st.bearing);
+    const ax = (o <= 22.5 || o >= 157.5) ? 'nord–sud' : (o >= 67.5 && o <= 112.5) ? 'est–ouest' : (o > 22.5 && o < 67.5) ? 'NE–SO' : 'NO–SE';
+    msg.innerHTML = 'Orientation mesurée : <strong>' + o + '° (' + ax + ')</strong>. Valide, ou ajuste.';
+  }
+}
+
+function annulerDernierPointOrientation() {
+  const st = orientationDrawState; if (!st || st.points.length === 0) return;
+  if (st.line) { map.removeLayer(st.line); st.line = null; }
+  const mk = st.markers.pop(); if (mk) map.removeLayer(mk);
+  st.points.pop();
+  st.bearing = null;
+  map.getContainer().style.cursor = 'crosshair';
+  majBarreOrientation();
+}
+
+function refaireOrientationRangs() {
+  const st = orientationDrawState; if (!st) return;
+  if (st.line) { map.removeLayer(st.line); st.line = null; }
+  (st.markers || []).forEach(m => map.removeLayer(m));
+  st.markers = [];
+  st.points = []; st.bearing = null;
+  map.getContainer().style.cursor = 'crosshair';
+  majBarreOrientation();
+}
+
+async function validerOrientationRangs() {
+  const st = orientationDrawState; if (!st || st.points.length < 2) return;
+  const pid = st.parcelleId;
+  const o = orientationFromBearing(st.bearing);
+  const { error } = await sb.from('parcelles').update({ orientation_rangs: o }).eq('id', pid);
+  if (error) {
+    if (/orientation_rangs/i.test(error.message || '')) alert('La colonne orientation_rangs n\'existe pas encore dans Supabase. Lance la migration SQL fournie, puis réessaie.');
+    else alert('Erreur : ' + error.message);
+    terminerOrientationRangs(); setTimeout(() => openParcelleModal(pid), 200); return;
+  }
+  const i = cache.parcelles.findIndex(p => p.id === pid);
+  if (i >= 0) cache.parcelles[i].orientation_rangs = o;
+  toast('📐 Orientation enregistrée : ' + o + '°');
+  terminerOrientationRangs();
+  setTimeout(() => openParcelleModal(pid), 200);
+}
+
+function annulerOrientationRangs() {
+  const pid = orientationDrawState ? orientationDrawState.parcelleId : null;
+  terminerOrientationRangs();
+  if (pid) setTimeout(() => openParcelleModal(pid), 150);
+}
+
+function terminerOrientationRangs() {
+  const st = orientationDrawState; if (!st) return;
+  if (map) {
+    map.off('click', onOrientationMapClick);
+    if (st.line) map.removeLayer(st.line);
+    (st.markers || []).forEach(m => map.removeLayer(m));
+    if (st.refGroup) map.removeLayer(st.refGroup);
+    map.getContainer().style.cursor = '';
+  }
+  orientationDrawState = null;
+  const bar = document.getElementById('orientation-instructions'); if (bar) bar.remove();
+  if (map) { renderMapPolygones(); renderMapMarkers(); }
+}
+
 function openParcelleModal(pid) {
   // Vérification des droits
   if (!pid && !peut('parcelles_creer')) { alert('Vous n\'avez pas le droit de créer une parcelle.'); return; }
@@ -7135,6 +7690,7 @@ function openParcelleModal(pid) {
     // Afficher le carnet
     document.getElementById('p-carnet-section').style.display = 'block';
     renderCarnet(pid);
+    openSoleilForParcelle(p);
   } else {
     ['p-nom','p-surface','p-annee','p-portegreffe','p-densite','p-conduite','p-lat','p-lng','p-volume-bouillie-ha','p-notes'].forEach(i => document.getElementById(i).value='');
     setCepageInputs([]);
@@ -7142,6 +7698,7 @@ function openParcelleModal(pid) {
     document.getElementById('p-contour-section').style.display = 'none';
     // Cacher le carnet (pas encore de parcelle)
     document.getElementById('p-carnet-section').style.display = 'none';
+    var _ss = document.getElementById('p-soleil-section'); if (_ss) _ss.style.display = 'none';
   }
   document.getElementById('modal-parcelle').classList.add('active');
 }
@@ -7164,8 +7721,17 @@ async function saveParcelle() {
     notes: document.getElementById('p-notes').value.trim()||null,
     couleur: document.getElementById('p-couleur').value || null
   };
+  const _oriEl = document.getElementById('p-orientation');
+  const _soleilBody = document.getElementById('p-soleil-body');
+  if (_oriEl && _soleilBody && _soleilBody.style.display === 'block') {
+    data.orientation_rangs = Math.round(parseFloat(_oriEl.value));
+  }
   if (pid) {
-    const { error } = await sb.from('parcelles').update(data).eq('id',pid);
+    let { error } = await sb.from('parcelles').update(data).eq('id',pid);
+    if (error && /orientation_rangs/i.test(error.message || '')) {
+      delete data.orientation_rangs;
+      ({ error } = await sb.from('parcelles').update(data).eq('id',pid));
+    }
     if (error) { alert("Erreur d'enregistrement : " + error.message); return; }
     const i = cache.parcelles.findIndex(x=>x.id===pid); if (i>=0) cache.parcelles[i]={...cache.parcelles[i],...data};
   } else {
@@ -8107,6 +8673,7 @@ function showMap() {
 function initMap() {
   if (typeof L === 'undefined') { document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">⚠️ Connexion internet requise pour la carte.</div>'; return; }
   map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  map.attributionControl.setPrefix(false);
   mapLayers.photo = L.tileLayer('https://data.geopf.fr/wmts?layer=ORTHOIMAGERY.ORTHOPHOTOS&style=normal&tilematrixset=PM&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y}', { attribution: '© IGN Géoplateforme', maxZoom: 19 });
   mapLayers.plan = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
   mapLayers.photo.addTo(map);
@@ -8131,9 +8698,9 @@ function renderMapMarkers() {
     cache.traitements.forEach(t => { if (getParcellesIds(t).includes(p.id)) { const d=dreStatus(t); if (d?.active) { enDRE=true; dreLabel=formatH(d.heuresRestantes); } } });
     const tachesP = cache.taches.filter(tk => (tk.statut==='a_faire'||tk.statut==='en_cours') && getTacheParcelles(tk.id).includes(p.id));
     const nbT = tachesP.length;
-    const marker = L.marker([p.lat, p.lng], { icon: L.divIcon({ className:'', html:`<div class="vigne-marker${enDRE?' dre':''}${nbT?' a-taches':''}">${nbT?`<span class="marker-tache-badge">${nbT}</span>`:''}</div>`, iconSize:[22,22], iconAnchor:[11,11] }), draggable: true }).addTo(map);
+    const marker = L.marker([p.lat, p.lng], { icon: L.divIcon({ className:'', html:`<div class="vigne-marker${enDRE?' dre':''}${nbT?' a-taches':''}"><svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 1C7.8 1 2 6.8 2 14c0 9.6 13 23 13 23s13-13.4 13-23C28 6.8 22.2 1 15 1z" fill="currentColor" stroke="#fff" stroke-width="2"/><circle cx="15" cy="13" r="4.5" fill="#efe4cf"/></svg>${nbT?`<span class="marker-tache-badge">${nbT}</span>`:''}</div>`, iconSize:[30,38], iconAnchor:[15,37], popupAnchor:[0,-34] }), draggable: true }).addTo(map);
     const tachesPopup = nbT ? `<div style="margin-top:6px; border-top:1px solid var(--border); padding-top:6px;"><div style="font-size:11px; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:.4px; margin-bottom:2px;">${nbT} tâche${nbT>1?'s':''} en cours</div>${tachesP.map(tk=>`<div style="font-size:12px; color:var(--ink);">• ${(tk.titre||'').replace(/</g,'&lt;')}${tk.statut==='en_cours'?' <em style="color:var(--muted);">(en cours)</em>':''}</div>`).join('')}</div>` : '';
-    marker.bindPopup(`<strong style="font-size:14px;">${p.nom}</strong><br><span style="color:var(--muted);font-size:12px;">${p.cepage} — ${fmtSurface(p.surface)} ha</span>${enDRE?`<br><span style="color:var(--warn);font-size:12px;font-weight:600;">⚠️ DRE : ${dreLabel}</span>`:''}${tachesPopup}<div class="map-popup-actions"><button onclick="openParcelleModal('${p.id}')">Modifier</button><button class="danger" onclick="removeParcelleLocation('${p.id}')">Retirer</button></div>`);
+    marker.bindPopup(`<div class="ov-pp-head"><div class="ov-pp-name">${p.nom}</div><div class="ov-pp-cepage">${p.cepage}</div></div><div class="ov-pp-body"><div class="ov-pp-row"><span>Surface</span><b>${fmtSurface(p.surface)} ha</b></div>${enDRE?`<div class="ov-pp-dre">⚠️ DRE : ${dreLabel}</div>`:''}${tachesPopup}<div class="map-popup-actions"><button onclick="openParcelleModal('${p.id}')">Modifier</button><button class="danger" onclick="removeParcelleLocation('${p.id}')">Retirer</button></div></div>`, { className: 'ov-popup' });
     marker.on('dragend', async (e) => {
       const pos = e.target.getLatLng();
       const parc = getParcelle(p.id);
@@ -8381,6 +8948,8 @@ function renderMapPolygones() {
           color: meta.couleur, weight: 2, opacity: 0.9, fillColor: meta.couleur, fillOpacity: 0.25
         }).addTo(map);
         polygon.bindTooltip(buildTooltip(0, 1), { permanent: false, direction: 'center', className: 'parcelle-tooltip' });
+        polygon.on('mouseover', function(){ this.setStyle({ weight: 3, fillOpacity: 0.4 }); });
+        polygon.on('mouseout', function(){ this.setStyle({ weight: 2, fillOpacity: 0.25 }); });
         polygon.on('click', () => openParcelleModal(p.id));
         parcellePolygons[p.id] = polygon;
       } else {
@@ -8392,6 +8961,8 @@ function renderMapPolygones() {
             color: meta.couleur, weight: 2, opacity: 0.9, fillColor: meta.couleur, fillOpacity: 0.25
           });
           sub.bindTooltip(buildTooltip(index, zones.length), { permanent: false, direction: 'center', className: 'parcelle-tooltip' });
+          sub.on('mouseover', function(){ this.setStyle({ weight: 3, fillOpacity: 0.4 }); });
+          sub.on('mouseout', function(){ this.setStyle({ weight: 2, fillOpacity: 0.25 }); });
           sub.on('click', () => openParcelleModal(p.id));
           group.addLayer(sub);
         });
